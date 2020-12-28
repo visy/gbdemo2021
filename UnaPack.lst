@@ -1,0 +1,251 @@
+                                      1 ; aPACK/aPLib decompressor
+                                      2 ; Intel 8080 version by Ivan Gorodetsky, 2018-2020
+                                      3 ; GBZ80 adaptation by Tony Pavlov, 2020
+                                      4 ; No self-modifying code
+                                      5 ; Based on z80 version by dwedit/utopian/Metalbrain
+                                      6 
+                                      7 ; de = source
+                                      8 ; bc = dest
+                                      9 ; call UNAPACK
+                                     10 
+                                     11 .area _CODE
+                                     12 
+      000000                         13 _UNAPACK::
+      000000 C5                      14         PUSH    BC
+      000001 F8 04                   15         LDA     HL,4(SP)
+      000003 2A                      16         LD      A,(HL+)
+      000004 5F                      17         LD      E,A
+      000005 2A                      18         LD      A,(HL+)
+      000006 57                      19         LD      D,A
+      000007 2A                      20         LD      A,(HL+)
+      000008 4F                      21         LD      C,A
+      000009 7E                      22         LD      A,(HL)
+      00000A 47                      23         LD      B,A
+      00000B CD 10 00                24         CALL    UNAPACK
+      00000E C1                      25         POP     BC
+      00000F C9                      26         RET
+                                     27 
+      000010                         28 UNAPACK::
+      000010 3E 80                   29         LD      A,#0x80
+      000012 EA 02 00                30         LD      (BITS),A
+                                     31 
+      000015                         32 APBRANCH1:
+      000015 1A                      33         LD      A,(DE)
+      000016 13                      34         INC     DE
+      000017                         35 APLOOP0:
+      000017 02                      36         LD      (BC),A
+      000018 03                      37         INC     BC
+      000019 3E FF                   38         LD      A,#-1
+      00001B                         39 APLOOP:
+      00001B EA 03 00                40         LD      (DECR),A
+      00001E CD CA 00                41         CALL    AP_GETBIT
+      000021 30 F2                   42         JR      NC,APBRANCH1
+      000023 87                      43         ADD     A,A
+      000024 CC D2 00                44         CALL    Z,AP_GETBIT3
+      000027 30 40                   45         JR      NC,APBRANCH2
+      000029 87                      46         ADD     A,A
+      00002A CC D2 00                47         CALL    Z,AP_GETBIT3
+      00002D 30 1E                   48         JR      NC,APBRANCH3
+      00002F 6F                      49         LD      L,A
+      000030 26 10                   50         LD      H,#0x10
+      000032                         51 APGET4BITS:
+      000032 87                      52         ADD     A,A
+      000033 20 04                   53         JR      NZ,APGET4BITS1
+      000035 1A                      54         LD      A,(DE)
+      000036 13                      55         INC     DE
+      000037 6F                      56         LD      L,A
+      000038 8F                      57         ADC     A,A
+      000039                         58 APGET4BITS1:
+      000039 29                      59         ADD     HL,HL
+      00003A 30 F6                   60         JR      NC,APGET4BITS
+      00003C EA 02 00                61         LD      (BITS),A
+      00003F AF                      62         XOR     A
+      000040 B4                      63         OR      H
+      000041 28 D4                   64         JR      Z,APLOOP0
+      000043 79                      65         LD      A,C
+      000044 94                      66         SUB     H
+      000045 6F                      67         LD      L,A
+      000046 78                      68         LD      A,B
+      000047 DE 00                   69         SBC     A,#0
+      000049 67                      70         LD      H,A
+      00004A 7E                      71         LD      A,(HL)
+      00004B 18 CA                   72         JR      APLOOP0
+      00004D                         73 APBRANCH3:
+      00004D EA 02 00                74         LD      (BITS),A
+      000050 26 00                   75         LD      H,#0
+      000052 1A                      76         LD      A,(DE)
+      000053 1F                      77         RRA
+      000054 6F                      78         LD      L,A
+      000055 1F                      79         RRA
+      000056 8F                      80         ADC     A,A
+      000057 C8                      81         RET     Z
+      000058 13                      82         INC     DE
+      000059 3E 02                   83         LD      A,#2
+      00005B 8C                      84         ADC     A,H
+      00005C D5                      85         PUSH    DE
+                                     86 
+      00005D 5F                      87         LD      E, A
+                                     88 
+      00005E 7D                      89         LD      A,L
+      00005F EA 00 00                90         LD      (OFFSET), A
+      000062 7C                      91         LD      A,H
+      000063 EA 01 00                92         LD      (OFFSET+1), A
+                                     93 
+      000066 54                      94         LD      D,H
+      000067 18 3E                   95         JR      AP_FINISHUP
+      000069                         96 APBRANCH2:
+      000069 CD DC 00                97         CALL    AP_GETGAMMA
+      00006C 1D                      98         DEC     E
+      00006D FA 03 00                99         LD      A,(DECR)
+      000070 83                     100         ADD     A,E
+      000071 28 47                  101         JR      Z,AP_R0_GAMMA
+      000073 3D                     102         DEC     A
+      000074 57                     103         LD      D,A
+      000075 5E                     104         LD      E,(HL)
+                                    105 
+      000076 E5                     106         PUSH    HL
+      000077 62                     107         LD      H,D
+      000078 6B                     108         LD      L,E
+      000079 D1                     109         POP     DE
+                                    110 
+      00007A 13                     111         INC     DE
+                                    112 
+      00007B 7D                     113         LD      A,L
+      00007C EA 00 00               114         LD      (OFFSET), A
+      00007F 7C                     115         LD      A,H
+      000080 EA 01 00               116         LD      (OFFSET+1), A
+                                    117 
+      000083 E5                     118         PUSH    HL
+      000084 CD D9 00               119         CALL    AP_GETGAMMA_
+                                    120 
+      000087 D5                     121         PUSH    DE
+      000088 7D                     122         LD      A,L
+      000089 54                     123         LD      D,H
+      00008A F8 02                  124         LDA     HL,2(SP)
+      00008C 5E                     125         LD      E,(HL)
+      00008D 22                     126         LD      (HL+),A
+      00008E 7E                     127         LD      A,(HL)
+      00008F 72                     128         LD      (HL),D
+      000090 67                     129         LD      H,A
+      000091 6B                     130         LD      L,E
+      000092 D1                     131         POP     DE
+                                    132 
+      000093 7C                     133         LD      A,H
+      000094 FE 7D                  134         CP      #32000/256
+      000096 30 0D                  135         JR      NC,APSKIP1
+      000098 FE 05                  136         CP      #5
+      00009A 38 01                  137         JR      C,APSKIP2
+      00009C 13                     138         INC     DE
+      00009D                        139 APSKIP2:
+      00009D 3E 7F                  140         LD      A,#0x7F
+      00009F 95                     141         SUB     L
+      0000A0 3E 00                  142         LD      A,#0
+      0000A2 9C                     143         SBC     A,H
+      0000A3 38 02                  144         JR      C,APSKIP3
+      0000A5                        145 APSKIP1:
+      0000A5 13                     146         INC     DE
+      0000A6 13                     147         INC     DE
+      0000A7                        148 APSKIP3:
+      0000A7                        149 AP_FINISHUP:
+      0000A7 79                     150         LD      A,C
+      0000A8 95                     151         SUB     L
+      0000A9 6F                     152         LD      L,A
+      0000AA 78                     153         LD      A,B
+      0000AB 9C                     154         SBC     A,H
+      0000AC 67                     155         LD      H,A
+      0000AD                        156 AP_FINISHUP2:
+      0000AD                        157 LDIR:
+      0000AD 7E                     158         LD      A,(HL)
+      0000AE 02                     159         LD      (BC),A
+      0000AF 23                     160         INC     HL
+      0000B0 03                     161         INC     BC
+      0000B1 1B                     162         DEC     DE
+      0000B2 7A                     163         LD      A,D
+      0000B3 B3                     164         OR      E
+      0000B4 20 F7                  165         JR      NZ,LDIR
+      0000B6 D1                     166         POP     DE
+      0000B7 C3 1B 00               167         JP      APLOOP
+                                    168 
+      0000BA                        169 AP_R0_GAMMA:
+      0000BA E5                     170         PUSH    HL
+      0000BB 62                     171         LD      H,D
+      0000BC 6B                     172         LD      L,E
+      0000BD D1                     173         POP     DE
+                                    174 
+      0000BE CD D9 00               175         CALL    AP_GETGAMMA_
+      0000C1 E5                     176         PUSH    HL
+                                    177 
+      0000C2 21 00 00               178         LD      HL,#OFFSET
+      0000C5 2A                     179         LD      A,(HL+)
+      0000C6 66                     180         LD      H,(HL)
+      0000C7 6F                     181         LD      L,A
+                                    182 
+      0000C8 18 DD                  183         JR      AP_FINISHUP
+      0000CA                        184 AP_GETBIT:
+      0000CA FA 02 00               185         LD      A,(BITS)
+      0000CD                        186 AP_GETBIT2:
+      0000CD 87                     187         ADD     A,A
+      0000CE EA 02 00               188         LD      (BITS),A
+      0000D1 C0                     189         RET     NZ
+      0000D2                        190 AP_GETBIT3:
+      0000D2 1A                     191         LD      A,(DE)
+      0000D3 13                     192         INC     DE
+      0000D4 8F                     193         ADC     A,A
+      0000D5                        194 AP_GETBIT4:
+      0000D5 EA 02 00               195         LD      (BITS),A
+      0000D8 C9                     196         RET
+                                    197 
+      0000D9                        198 AP_GETGAMMA_:
+      0000D9 FA 02 00               199         LD      A,(BITS)
+      0000DC                        200 AP_GETGAMMA:
+      0000DC 21 01 00               201         LD      HL,#1
+      0000DF                        202 AP_GETGAMMALOOP:
+      0000DF 29                     203         ADD     HL,HL
+      0000E0 87                     204         ADD     A,A
+      0000E1 CC D2 00               205         CALL    Z,AP_GETBIT3
+      0000E4 30 01                  206         JR      NC,AP_GETGAMMALOOP1
+      0000E6 2C                     207         INC     L
+      0000E7                        208 AP_GETGAMMALOOP1:
+      0000E7 87                     209         ADD     A,A
+      0000E8 CC D2 00               210         CALL    Z,AP_GETBIT3
+      0000EB 38 F2                  211         JR      C,AP_GETGAMMALOOP
+                                    212 
+      0000ED E5                     213         PUSH    HL
+      0000EE 62                     214         LD      H,D
+      0000EF 6B                     215         LD      L,E
+      0000F0 D1                     216         POP     DE
+                                    217 
+      0000F1 18 E2                  218         JR      AP_GETBIT4
+                                    219 
+                                    220 .area _BSS
+      000000                        221 OFFSET: 
+      000000                        222         .DS 2
+      000002                        223 BITS:   
+      000002                        224         .DS 1
+      000003                        225 DECR:   
+      000003                        226         .DS 1
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 1.
+Hexadecimal [24-Bits]
+
+Symbol Table
+
+    .__.$$$.=  002710 L   |     .__.ABS.=  000000 G   |     .__.CPU.=  000000 L
+    .__.H$L.=  000000 L   |   0 APBRANCH   000015 R   |   0 APBRANCH   000069 R
+  0 APBRANCH   00004D R   |   0 APGET4BI   000032 R   |   0 APGET4BI   000039 R
+  0 APLOOP     00001B R   |   0 APLOOP0    000017 R   |   0 APSKIP1    0000A5 R
+  0 APSKIP2    00009D R   |   0 APSKIP3    0000A7 R   |   0 AP_FINIS   0000A7 R
+  0 AP_FINIS   0000AD R   |   0 AP_GETBI   0000CA R   |   0 AP_GETBI   0000CD R
+  0 AP_GETBI   0000D2 R   |   0 AP_GETBI   0000D5 R   |   0 AP_GETGA   0000DC R
+  0 AP_GETGA   0000DF R   |   0 AP_GETGA   0000E7 R   |   0 AP_GETGA   0000D9 R
+  0 AP_R0_GA   0000BA R   |   1 BITS       000002 R   |   1 DECR       000003 R
+  0 LDIR       0000AD R   |   1 OFFSET     000000 R   |   0 UNAPACK    000010 GR
+  0 _UNAPACK   000000 GR
+
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 2.
+Hexadecimal [24-Bits]
+
+Area Table
+
+   0 _CODE      size     F3   flags    0
+   1 _BSS       size      4   flags    0
+
