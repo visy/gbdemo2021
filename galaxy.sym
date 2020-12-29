@@ -1,0 +1,102 @@
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 1.
+Hexadecimal [24-Bits]
+
+Symbol Table
+
+    .__.$$$.                                                    =  002710 L
+    .__.ABS.                                                    =  000000 G
+    .__.CPU.                                                    =  000000 L
+    .__.H$L.                                                    =  000000 L
+    _BGP_REG                                                       ****** GX
+    _LCDC_REG                                                      ****** GX
+    _OBP0_REG                                                      ****** GX
+    _OBP1_REG                                                      ****** GX
+    _SCX_REG                                                       ****** GX
+    _SCY_REG                                                       ****** GX
+    ___current_ram_bank                                         =  0000FC 
+    ___current_rom_bank                                         =  0000FD 
+    ___dummy_variable                                           =  0000FE 
+    __current_bank                                                 ****** GX
+    _disable_interrupts                                            ****** GX
+    _display_off                                                   ****** GX
+    _enable_interrupts                                             ****** GX
+  0 _gb_data                                                       000053 GR
+  0 _gb_map                                                        000F23 GR
+  0 _main                                                          000000 GR
+ 15 _set_ROM_bank1                                                 000000 GR
+ 15 _set_ROM_bank10                                                00007E GR
+ 15 _set_ROM_bank11                                                00008C GR
+ 15 _set_ROM_bank12                                                00009A GR
+ 15 _set_ROM_bank13                                                0000A8 GR
+ 15 _set_ROM_bank14                                                0000B6 GR
+ 15 _set_ROM_bank15                                                0000C4 GR
+ 15 _set_ROM_bank16                                                0000D2 GR
+ 15 _set_ROM_bank17                                                0000E0 GR
+ 15 _set_ROM_bank18                                                0000EE GR
+ 15 _set_ROM_bank2                                                 00000E GR
+ 15 _set_ROM_bank3                                                 00001C GR
+ 15 _set_ROM_bank4                                                 00002A GR
+ 15 _set_ROM_bank5                                                 000038 GR
+ 15 _set_ROM_bank6                                                 000046 GR
+ 15 _set_ROM_bank7                                                 000054 GR
+ 15 _set_ROM_bank8                                                 000062 GR
+ 15 _set_ROM_bank9                                                 000070 GR
+    _set_bkg_data                                                  ****** GX
+    _set_bkg_tiles                                                 ****** GX
+ 13 _songdata1                                                     000000 GR
+  A _songdata10                                                    000000 GR
+  9 _songdata11                                                    000000 GR
+  8 _songdata12                                                    000000 GR
+  7 _songdata13                                                    000000 GR
+  6 _songdata14                                                    000000 GR
+  5 _songdata15                                                    000000 GR
+  4 _songdata16                                                    000000 GR
+  3 _songdata17                                                    000000 GR
+  2 _songdata18                                                    000000 GR
+ 12 _songdata2                                                     000000 GR
+ 11 _songdata3                                                     000000 GR
+ 10 _songdata4                                                     000000 GR
+  F _songdata5                                                     000000 GR
+  E _songdata6                                                     000000 GR
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 2.
+Hexadecimal [24-Bits]
+
+Symbol Table
+
+  D _songdata7                                                     000000 GR
+  C _songdata8                                                     000000 GR
+  B _songdata9                                                     000000 GR
+  1 _time                                                          000000 R
+    _wait_vbl_done                                                 ****** GX
+
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 3.
+Hexadecimal [24-Bits]
+
+Area Table
+
+   0 _CODE                                      size   108B   flags    0
+   1 _DATA                                      size      1   flags    0
+   2 _CODE_18                                   size   39F4   flags    0
+   3 _CODE_17                                   size   3FFB   flags    0
+   4 _CODE_16                                   size   3FFA   flags    0
+   5 _CODE_15                                   size   3FFA   flags    0
+   6 _CODE_14                                   size   3FFE   flags    0
+   7 _CODE_13                                   size   3FFA   flags    0
+   8 _CODE_12                                   size   3FFC   flags    0
+   9 _CODE_11                                   size   3FFA   flags    0
+   A _CODE_10                                   size   3FFF   flags    0
+   B _CODE_9                                    size   3FFF   flags    0
+   C _CODE_8                                    size   3FFD   flags    0
+   D _CODE_7                                    size   3FFA   flags    0
+   E _CODE_6                                    size   3FFA   flags    0
+   F _CODE_5                                    size   3FFA   flags    0
+  10 _CODE_4                                    size   3FFE   flags    0
+  11 _CODE_3                                    size   3FFA   flags    0
+  12 _CODE_2                                    size   3FFF   flags    0
+  13 _CODE_1                                    size   3FFA   flags    0
+  14 _DABS                                      size      0   flags    8
+  15 _HOME                                      size     FC   flags    0
+  16 _GSINIT                                    size      5   flags    0
+  17 _GSFINAL                                   size      0   flags    0
+  18 _CABS                                      size      0   flags    8
+

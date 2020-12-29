@@ -1,0 +1,220 @@
+                                      1 .area _BSS
+                                      2 
+      000000                          3 Song:
+      000000                          4     .ds  1
+      000001                          5 CurrentBank:
+      000001                          6     .ds  2
+      000003                          7 CurrentPtr:
+      000003                          8     .ds  2
+                                      9 
+                                     10 .area _CODE
+                                     11 
+                                     12 ; Starts playing a song. If a song is already playing,
+                                     13 ; make sure interrupts are disabled when calling this.
+                                     14 ;
+                                     15 ; IN: a = song number
+                                     16 ; OUT: -
+                                     17 ; SIDE EFFECTS: trashes af
+                                     18 ;
+      000000                         19 LsdjPlaySong:
+      000000 D5                      20     push    de
+      000001 E5                      21     push    hl
+                                     22 
+      000002 EA 00 00                23     ld  (Song),a
+      000005 16 00                   24     ld  d,#0
+      000007 87                      25     add a,a
+      000008 87                      26     add a,a
+      000009 5F                      27     ld  e,a
+                                     28 
+      00000A 21 01 00                29     ld  hl, #1
+      00000D 19                      30     add hl,de
+                                     31 
+      00000E 2A                      32     ld  a,(hl+)
+      00000F EA 01 00                33     ld  (CurrentBank),a
+      000012 2A                      34     ld  a,(hl+)
+      000013 EA 02 00                35     ld  (CurrentBank+1),a
+      000016 2A                      36     ld  a,(hl+)
+      000017 EA 03 00                37     ld  (CurrentPtr),a
+      00001A 7E                      38     ld  a,(hl)
+      00001B EA 04 00                39     ld  (CurrentPtr+1),a
+                                     40 
+      00001E E1                      41     pop hl
+      00001F D1                      42     pop de
+      000020 C9                      43     ret
+                                     44 
+                                     45 ; Call this six times per screen update,
+                                     46 ; evenly spread out over the screen.
+                                     47 ;
+                                     48 ; IN: -
+                                     49 ; OUT: -
+                                     50 ; SIDE EFFECTS: changes ROM bank, trashes af
+                                     51 ;
+      000021                         52 LsdjTick:
+      000021 C5                      53     push    bc
+      000022 D5                      54     push    de
+      000023 E5                      55     push    hl
+                                     56 
+      000024                         57 .tick:
+      000024 FA 02 00                58     ld  a,(CurrentBank+1)
+      000027 EA 00 30                59     ld  (0x3000),a
+      00002A FA 01 00                60     ld  a,(CurrentBank)
+      00002D EA 00 20                61     ld  (0x2000),a
+      000030 FA 04 00                62     ld  a,(CurrentPtr+1) ; hl = ptr
+      000033 67                      63     ld  h,a
+      000034 FA 03 00                64     ld  a,(CurrentPtr)
+      000037 6F                      65     ld  l,a
+                                     66 
+      000038 16 FF                   67     ld  d,#0xff
+                                     68 
+      00003A                         69 .loop:
+      00003A 2A                      70     ld  a,(hl+)
+      00003B B7                      71     or  a
+      00003C 28 18                   72     jr  z,.lyc_done
+      00003E FE 01                   73     cp  #1
+      000040 28 28                   74     jr  z,.handle_sample
+      000042 FE 02                   75     cp  #2
+      000044 28 1C                   76     jr  z,.handle_stop
+      000046 FE 03                   77     cp  #3
+      000048 CA D4 00                78     jp  z,.next_bank
+                                     79 
+                                     80     ; write sound register
+      00004B 47                      81     ld  b,a
+      00004C E6 7F                   82     and #0x7f
+      00004E 5F                      83     ld  e,a
+      00004F 2A                      84     ld  a,(hl+)
+      000050 12                      85     ld  (de),a
+      000051 78                      86     ld  a,b
+      000052 CB 7F                   87     bit 7,a ; test LYC_END
+      000054 28 E4                   88     jr  z,.loop
+                                     89 
+      000056                         90 .lyc_done:
+      000056 7D                      91     ld  a,l
+      000057 EA 03 00                92     ld  (CurrentPtr),a
+      00005A 7C                      93     ld  a,h
+      00005B EA 04 00                94     ld  (CurrentPtr+1),a
+      00005E E1                      95     pop hl
+      00005F D1                      96     pop de
+      000060 C1                      97     pop bc
+      000061 C9                      98     ret
+                                     99 
+      000062                        100 .handle_stop:
+      000062 FA 00 00               101     ld  a,(Song)
+      000065 CD 00 00               102     call    LsdjPlaySong
+      000068 18 BA                  103     jr  .tick
+                                    104 
+      00006A                        105 .handle_sample:
+      00006A 2A                     106     ld  a,(hl+)
+      00006B 47                     107     ld  b,a     ; b = sample bank
+      00006C 2A                     108     ld  a,(hl+)
+      00006D 5F                     109     ld  e,a
+      00006E 2A                     110     ld  a,(hl+)
+      00006F 57                     111     ld  d,a     ; de = sample ptr
+                                    112 
+      000070 E5                     113     push    hl
+                                    114     ; switch bank
+      000071 AF                     115     xor a
+      000072 EA 00 30               116     ld  (0x3000),a
+      000075 78                     117     ld  a,b
+      000076 EA 00 20               118     ld  (0x2000),a
+                                    119 
+      000079 62                     120     ld  h,d
+      00007A 6B                     121     ld  l,e
+                                    122 
+                                    123     ; disable wave channel output
+      00007B F0 25                  124     ldh a,(0x25)
+      00007D 5F                     125     ld  e,a
+      00007E E6 BB                  126     and a,#0xbb
+      000080 E0 25                  127     ldh (0x25),a
+                                    128 
+      000082 AF                     129     xor a
+      000083 E0 1A                  130     ldh (0x1a),a ; mute channel
+                                    131 
+      000085 2A                     132     ld  a,(hl+)
+      000086 E0 30                  133     ldh (0x30),a
+      000088 2A                     134     ld  a,(hl+)
+      000089 E0 31                  135     ldh (0x31),a
+      00008B 2A                     136     ld  a,(hl+)
+      00008C E0 32                  137     ldh (0x32),a
+      00008E 2A                     138     ld  a,(hl+)
+      00008F E0 33                  139     ldh (0x33),a
+      000091 2A                     140     ld  a,(hl+)
+      000092 E0 34                  141     ldh (0x34),a
+      000094 2A                     142     ld  a,(hl+)
+      000095 E0 35                  143     ldh (0x35),a
+      000097 2A                     144     ld  a,(hl+)
+      000098 E0 36                  145     ldh (0x36),a
+      00009A 2A                     146     ld  a,(hl+)
+      00009B E0 37                  147     ldh (0x37),a
+      00009D 2A                     148     ld  a,(hl+)
+      00009E E0 38                  149     ldh (0x38),a
+      0000A0 2A                     150     ld  a,(hl+)
+      0000A1 E0 39                  151     ldh (0x39),a
+      0000A3 2A                     152     ld  a,(hl+)
+      0000A4 E0 3A                  153     ldh (0x3a),a
+      0000A6 2A                     154     ld  a,(hl+)
+      0000A7 E0 3B                  155     ldh (0x3b),a
+      0000A9 2A                     156     ld  a,(hl+)
+      0000AA E0 3C                  157     ldh (0x3c),a
+      0000AC 2A                     158     ld  a,(hl+)
+      0000AD E0 3D                  159     ldh (0x3d),a
+      0000AF 2A                     160     ld  a,(hl+)
+      0000B0 E0 3E                  161     ldh (0x3e),a
+      0000B2 2A                     162     ld  a,(hl+)
+      0000B3 E0 3F                  163     ldh (0x3f),a
+                                    164 
+      0000B5 3E 80                  165     ld  a,#0x80 ; unmute
+      0000B7 E0 1A                  166     ldh (0x1a),a
+                                    167 
+      0000B9 E1                     168     pop     hl
+                                    169 
+      0000BA FA 01 00               170     ld  a,(CurrentBank)
+      0000BD EA 00 20               171     ld  (0x2000),a
+      0000C0 FA 02 00               172     ld  a,(CurrentBank+1)
+      0000C3 EA 00 30               173     ld  (0x3000),a
+                                    174 
+      0000C6 2A                     175     ld  a,(hl+)
+      0000C7 E0 1E                  176     ldh (0x1e),a
+      0000C9 2A                     177     ld  a,(hl+)
+      0000CA E0 1D                  178     ldh (0x1d),a
+                                    179 
+      0000CC 7B                     180     ld  a,e
+      0000CD E0 25                  181     ldh (0x25),a
+                                    182 
+      0000CF 16 FF                  183     ld  d,#0xff
+      0000D1 C3 3A 00               184     jp  .loop
+                                    185 
+      0000D4                        186 .next_bank:
+      0000D4 3E 40                  187     ld  a,#0x40
+      0000D6 67                     188     ld  h,a
+      0000D7 AF                     189     xor a
+      0000D8 6F                     190     ld  l,a
+                                    191 
+      0000D9 FA 01 00               192     ld  a,(CurrentBank)
+      0000DC 3C                     193     inc a
+      0000DD EA 01 00               194     ld  (CurrentBank),a
+      0000E0 EA 00 20               195     ld  (0x2000),a
+      0000E3 C2 3A 00               196     jp  nz,.loop
+      0000E6 FA 02 00               197     ld  a,(CurrentBank+1)
+      0000E9 3C                     198     inc a
+      0000EA EA 02 00               199     ld  (CurrentBank+1),a
+      0000ED EA 00 30               200     ld  (0x3000),a
+      0000F0 C3 3A 00               201     jp  .loop
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 1.
+Hexadecimal [24-Bits]
+
+Symbol Table
+
+    .__.$$$.=  002710 L   |     .__.ABS.=  000000 G   |     .__.CPU.=  000000 L
+    .__.H$L.=  000000 L   |   0 .handle_   00006A R   |   0 .handle_   000062 R
+  0 .loop      00003A R   |   0 .lyc_don   000056 R   |   0 .next_ba   0000D4 R
+  0 .tick      000024 R   |   1 CurrentB   000001 R   |   1 CurrentP   000003 R
+  0 LsdjPlay   000000 R   |   0 LsdjTick   000021 R   |   1 Song       000000 R
+
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 2.
+Hexadecimal [24-Bits]
+
+Area Table
+
+   0 _CODE      size     F3   flags    0
+   1 _BSS       size      5   flags    0
+
